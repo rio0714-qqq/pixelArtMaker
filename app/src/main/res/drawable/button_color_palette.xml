@@ -7,8 +7,8 @@
     <size
         android:width="100dp"
         android:height="100dp"/>
-    <!-- 背景色 -->
-    <solid android:color="#FFFFFF" />
+<!--    &lt;!&ndash; 背景色 &ndash;&gt;-->
+<!--    <solid android:color="#FFFFFF" />-->
     <!-- ボタンの枠線 -->
     <stroke android:width="2dp" android:color="#000000"/>
     <!-- ボタンの角の半径 -->

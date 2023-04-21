@@ -1,21 +1,17 @@
 package com.example.pixelartmaker;
 
-import android.content.ContentResolver;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Matrix;
+
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.PorterDuff;
-import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.os.Environment;
-import android.provider.MediaStore;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -26,43 +22,49 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
+
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.logging.Handler;
 
 public class SquareView extends View {
 
     private boolean mAdjustWidth;
-    private ArrayList<Point> points = new ArrayList<Point>();
-    private Path path; // 1回層
-    int squareSize;
+
+    // Viewのサイズ
     private static int measureSpec;
-    // グローバル変数に持たせる
+    float squareSize;
+
+    // タッチした座標
     float dx;
     float dy;
+    // 座標のセル
     int x;
     int y;
-    int CELL_kazu = 24;
-    int BLK_SIZE = 1080 / CELL_kazu; // 360
+    // タッチした座標を配列で保持
+    private ArrayList<Point> points = new ArrayList<Point>();
+
+    // セルの数
+    public static int numberOfCell;
+    // セルのサイズ
+    float cellSize;
+
+    // パレット用カウント
     public static int count;
+    // グリッド線非表示フラグ
     private Boolean gridClearFlg;
 
-    // ビットマップ用 いらない？
-//    private Paint paintArt;
-    // ペイント用
+    // ペイント
     private Paint paint;
+    // パス
+    private Path path;
 
-    // canvas処理(bitmap、canvas)
-    //  グリッド用
+    // グリッド用
     private Bitmap gridBitmap;
     private Canvas gridCanvas;
-    //  作業用
+    // 作業用
     private Bitmap devBitmap;
     private Canvas devCanvas;
-    //  保存用
+    // 保存用
     public Bitmap masterBitmap;
     public Canvas masterCanvas;
 
@@ -85,11 +87,10 @@ public class SquareView extends View {
         this.path = new Path();
         paint = new Paint();
 
-//        paint.setStyle(Paint.Style.STROKE);
+        // ペイントの設定
         paint.setStrokeJoin(Paint.Join.ROUND);
         paint.setStrokeCap(Paint.Cap.ROUND);
         paint.setStrokeWidth(10);
-//        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
     }
 
     @Override
@@ -97,7 +98,7 @@ public class SquareView extends View {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
         // 端末の横幅に合わせて正方形になるように縦幅指定
         squareSize = MeasureSpec.getSize(widthMeasureSpec);
-        measureSpec = MeasureSpec.makeMeasureSpec(squareSize, MeasureSpec.EXACTLY);
+        measureSpec = MeasureSpec.makeMeasureSpec((int) squareSize, MeasureSpec.EXACTLY);
 
         super.onMeasure(measureSpec, measureSpec);
     }
@@ -123,8 +124,11 @@ public class SquareView extends View {
         this.masterCanvas = null;
         this.masterCanvas = new Canvas(this.masterBitmap);
 
+        // サイズを変更したタイミングでgrid設定
+//        numberOfCell = 20;
+        cellSize = squareSize / numberOfCell;
+
         super.onSizeChanged(w, h, oldw, oldh);
-        Log.v("LifeCycle", "onResume");
     }
 
     public void setAdjustWidth(boolean adjustWidth) {
@@ -135,31 +139,38 @@ public class SquareView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-//        canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.MULTIPLY);
+
         // グリッド線のpaint
         Paint paintGrid = new Paint();
 
-        //お絵かきのpaint
+        // お絵かきのpaint
         Paint paintArt = new Paint();
 
-        Point po = null;
+//        Point po = null;
 
-        // グリッド描画　on/offはフラグ管理
-        drawGrid(paintGrid, gridCanvas);
+        // グリッド描画
+        drawGrid(paintGrid);
 
-        // 作業用にドット絵描画 for文処理は作業用だけに ページ遷移時は呼ばない
-        if (dx != 0 && dy != 0) {
-            paintArt.setColor(Color.rgb(Integer.parseInt(PixelArtMakeActivity.colorR),
-                    Integer.parseInt(PixelArtMakeActivity.colorG),
-                    Integer.parseInt(PixelArtMakeActivity.colorB)));
+        // 新規色指定
+        if ((dx != 0.0 && dy != 0.0)
+                && PixelArtMakeActivity.colorRGB != null
+                    && PixelArtMakeActivity.colorRGB.get(0) != null
+                        && PixelArtMakeActivity.colorRGB.get(1) != null
+                            && PixelArtMakeActivity.colorRGB.get(2) != null) {
+            paintArt.setColor(Color.rgb((PixelArtMakeActivity.colorRGB.get(0)),
+                            (PixelArtMakeActivity.colorRGB.get(1)),
+                    (PixelArtMakeActivity.colorRGB.get(2))));
             paintArt.setStyle(Paint.Style.FILL);
+        } else {
+            paintArt.setColor(Color.alpha(0));
         }
+        // 作業用にドット絵描画  drawPixelArtの処理は作業用だけに適用する
         if (!PixelArtMakeActivity.forFlg) {
             drawPixelArt(paintArt, devCanvas);
         }
 
         // 保存用にマージ&作業用空
-        mergePixelArt(paintGrid, paintArt, canvas, path);
+        mergePixelArt(canvas);
 
         // grid線表示/非表示
         if (gridClearFlg) {
@@ -181,61 +192,60 @@ public class SquareView extends View {
         Log.i("dx", String.valueOf(dx));
         Log.i("dy", String.valueOf(dy));
 
-        x = (int) (dx / BLK_SIZE); // タッチした座標を丸める
-        y = (int) (dy / BLK_SIZE); //
+        // タッチした座標をセルサイズに丸める
+        x = (int) (dx / cellSize);
+        y = (int) (dy / cellSize);
 
         Log.i("a", String.valueOf(x));
         Log.i("a", String.valueOf(y));
         points.add(new Point(x, y));
 
+        // パスをリセット
         path.reset();
+        // onDraw呼ぶ
         invalidate();
 
+        // drawPixelArt呼び出し処理用フラグ
         PixelArtMakeActivity.forFlg = false;
         return true;
     }
 
-    // マス目を生成
-    public void drawGrid(Paint paint, Canvas canvas) {
-        for (int i = 0; i <= CELL_kazu; i++) {
-            for (int j = 0; j <= CELL_kazu; j++) {
+    // grid生成
+    public void drawGrid(Paint paint) {
+        for (int i = 0; i <= numberOfCell; i++) {
+            for (int j = 0; j <= numberOfCell; j++) {
                 paint.setColor(Color.BLACK);
                 paint.setStrokeWidth(3);
                 paint.setStyle(Paint.Style.STROKE);
-                gridCanvas.drawRect(i * BLK_SIZE, j * BLK_SIZE, BLK_SIZE, BLK_SIZE, paint);
-                // 格子状のビットマップ作成
+                gridCanvas.drawRect(i * cellSize, j * cellSize, cellSize, cellSize, paint);
+                // 格子状のgridビットマップ作成
                 gridCanvas.drawBitmap(this.gridBitmap, 0, 0, paint);
             }
         }
     }
 
-    // ドット絵描写　for文回す処理　作業用のみ
-    // 左上から順にマスを見ていっているから色が変わってしまう
-    // canvasを別でもつ
+    // ドット絵描写　作業用のみ
+    // 左上から順にマスを見ていく処理で色が変わってしまうため
     public void drawPixelArt(Paint paint, Canvas canvas) {
         if (dx != 0 && dy != 0) {
-//            paint.setColor(Color.rgb(Integer.parseInt(PixelArtMakeActivity.colorR),
-//                    Integer.parseInt(PixelArtMakeActivity.colorG),
-//                    Integer.parseInt(PixelArtMakeActivity.colorB)));
-//            paint.setStyle(Paint.Style.FILL);
             for(int i=0; i<points.size(); i++) {
                 Point cc = points.get(i);
-                Rect rect = new Rect(cc.x * BLK_SIZE, cc.y * BLK_SIZE,
-                        cc.x * BLK_SIZE + BLK_SIZE, cc.y * BLK_SIZE + BLK_SIZE);
-                devCanvas.drawRect(rect, paint);
+                devCanvas.drawRect(cc.x * cellSize, cc.y * cellSize,
+                        cc.x * cellSize + cellSize, cc.y * cellSize + cellSize, paint);
                 devCanvas.drawBitmap(this.devBitmap, 0, 0, paint);
             }
         }
+        // 座標の配列を空に
         points.clear();
     }
+
+
     // 保存用にマージ&作業用空
-    public void mergePixelArt(Paint paintGrid, Paint paintArt, Canvas canvas, Path path) {
-
-
-        // 合成する 保存用に重ねていくイメージ
-//        masterCanvas.drawBitmap(gridBitmap, 0, 0, paint);
+    public void mergePixelArt(Canvas canvas) {
+        // 合成する 保存用に重ねていく
         masterCanvas.drawBitmap(devBitmap, 0, 0, paint);
-        // 作業用を空に　この時点で表示されない
+
+        // 作業用を空に(透明で上書き)
         devCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
         devBitmap.eraseColor(Color.TRANSPARENT);
 
@@ -244,37 +254,31 @@ public class SquareView extends View {
         canvas.drawBitmap(this.gridBitmap, 0,0, paint);
     }
 
-    // grid無効
-    public void gridFalse() {
-
-    }
     // 色指定
     public void setPathColor(int color) {
         paint.setColor(color);
     }
 
+    // grid線非表示
     public void gridClear(boolean flg) {
         gridClearFlg = flg;
         path.reset();
         invalidate();
     }
 
+    // ファイル書き出し処理
     public void saveAsPngImage(Bitmap saveImage) throws IOException {
         try {
             File extStrageDir =
                     Environment.getExternalStorageDirectory();
-            File file = new File(
-                    extStrageDir.getAbsolutePath()
-                            + "/" + Environment.DIRECTORY_PICTURES,
-                    getFileName());
+            File file = new File(extStrageDir.getAbsolutePath()
+                            + "/" + Environment.DIRECTORY_PICTURES, getFileName());
             FileOutputStream outStream = new FileOutputStream(file);
             masterBitmap.compress(Bitmap.CompressFormat.PNG, 100, outStream);
             outStream.close();
 
             Toast.makeText(
-                    getContext(),
-                    "Image saved",
-                    Toast.LENGTH_SHORT).show();
+                    getContext(), "保存完了!", Toast.LENGTH_SHORT).show();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -282,6 +286,7 @@ public class SquareView extends View {
         }
     }
 
+    // ファイル名取得
     protected String getFileName(){
         Calendar c = Calendar.getInstance();
         String s = c.get(Calendar.YEAR)
@@ -295,6 +300,4 @@ public class SquareView extends View {
         return s;
 
     }
-
-
 }

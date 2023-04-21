@@ -19,7 +19,7 @@
                 android:id="@+id/toolbar_new_create"
                 android:layout_width ="match_parent"
                 app:title="新規作成"
-                android:background="@color/teal_200"
+                android:background="#ff2281"
                 app:popupTheme="@style/Theme.PixelArtMaker.PopupOverlay"
                 android:layout_height = "?attr/actionBarSize" />
 

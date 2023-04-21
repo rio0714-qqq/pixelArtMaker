@@ -6,7 +6,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context=".ColorPickerActivity" >
+    tools:context=".ColorPickerActivity"
+    android:background="@color/black">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -45,6 +46,7 @@
                     android:layout_height="match_parent"
                     android:gravity="center"
                     android:textSize="25sp"
+                    android:textColor="@color/white"
                     android:singleLine="true"
                     android:inputType="number"/>
             </LinearLayout>
@@ -93,6 +95,7 @@
                     android:layout_height="match_parent"
                     android:gravity="center"
                     android:textSize="25sp"
+                    android:textColor="@color/white"
                     android:singleLine="true"
                     android:inputType="number"/>
             </LinearLayout>
@@ -141,6 +144,7 @@
                     android:layout_height="match_parent"
                     android:gravity="center"
                     android:textSize="25sp"
+                    android:textColor="@color/white"
                     android:singleLine="true"
                     android:inputType="number"/>
             </LinearLayout>
@@ -183,7 +187,12 @@
             android:layout_width="300dp"
             android:layout_height="100dp"
             android:text="OK"
-            android:textSize="40sp"/>
+            android:textSize="40sp"
+            android:textColor="@color/black"
+            android:textStyle="bold"
+            app:backgroundTint="@null"
+            style="?android:attr/borderlessButtonStyle"
+            android:background="@drawable/btn_custom"/>
     </LinearLayout>
 
 </LinearLayout>

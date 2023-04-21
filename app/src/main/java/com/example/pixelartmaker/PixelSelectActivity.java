@@ -1,41 +1,30 @@
 package com.example.pixelartmaker;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Menu;
+import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ListView;
 
-import androidx.appcompat.app.ActionBar;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentTransaction;
 
-import com.example.pixelartmaker.fragment.MainFragment;
+import com.example.pixelartmaker.fragment.CustomDialogFragment;
 
-public class PixelSelectActivity extends AppCompatActivity {
+public class PixelSelectActivity extends AppCompatActivity implements CustomDialogFragment.CustomDialogListener {
 
-    //データ
+    public static View dialogView;
+
+    // リストデータ
     String[] str = {
-            "", "クマ", "キリン", "ゾウ", "パンダ", "ペンギン", "コアラ", "キリン",
-            "カンガルー", "サル",
-            "ヒョウ",
-            "ゴリラ",
-            "カバ",
-            "カピバラ",
-            "リス",
-            "チンパンジー",
-            "ワニ",
-            "ハムスター",
-            "ヒツジ",
-            "ネコ",
-            //16 24　32 48 64 96 128 160 192
+        "16 × 16", "24 × 24", "32 × 32", "48 × 48", "サイズを指定する"
     };
 
     @Override
@@ -49,6 +38,12 @@ public class PixelSelectActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayShowHomeEnabled(true);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
+        // ピクセル選択ダイアログ
+        dialogView = LayoutInflater.from(PixelSelectActivity.this)
+                .inflate(R.layout.dialog, null);
+        ImageButton positive = (ImageButton) dialogView.findViewById(R.id.positive_button);
+        ImageButton negative = (ImageButton) dialogView.findViewById(R.id.negative_button);
+
         //アダプター
         ArrayAdapter adapter = new ArrayAdapter(
                 this,
@@ -61,50 +56,62 @@ public class PixelSelectActivity extends AppCompatActivity {
 
         //クリック処理
         ((ListView)findViewById(R.id.lv)).setOnItemClickListener(
-                new AdapterView.OnItemClickListener() {
-                    @Override
-                    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                        //クリックしたときのプログラムを書く
-                        Log.i("ボタン押したね","yehyehyehyeh");
-                        Intent intent = new Intent(getApplication(), PixelArtMakeActivity.class);
-                        startActivity(intent);
+            new AdapterView.OnItemClickListener() {
+                @SuppressLint("ResourceType")
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    ListView listView = (ListView)parent;
+                    Intent intent = new Intent(getApplication(), PixelArtMakeActivity.class);
+
+                    // タッチイベント
+                    switch (position) {
+                        case 0:
+                            intent.putExtra("16px", "16");
+                            startActivity(intent);
+                            break;
+                        case 1:
+                            intent.putExtra("24px", "24");
+                            startActivity(intent);
+                            break;
+                        case 2:
+                            intent.putExtra("32px", "32");
+                            startActivity(intent);
+                            break;
+                        case 3:
+                            intent.putExtra("48px", "48");
+                            startActivity(intent);
+                            break;
+                        case 4:
+                            CustomDialogFragment dialog = CustomDialogFragment.newInstance();
+                            dialog.show(getSupportFragmentManager(), "dialog");
+                            break;
                     }
                 }
+            }
         );
+    }
+    @Override
+    public void getInputPixel(String inputData) {
+        Log.d("inputPixel", "ピクセル取得");
     }
 
     @Override
-    public boolean onSupportNavigateUp() {
-        Log.i("テスト", "tesuto");
-        finish();
-        return super.onSupportNavigateUp();
-    }
-//    @Override
-//    public boolean onCreateOptionsMenu(Menu menu) {
-//        // Inflate the menu; this adds items to the action bar if it is present.
-//        getMenuInflater().inflate(R.menu.menu_main, menu);
-//        return true;
-//    }
-//
-//    @Override
-//    public boolean onOptionsItemSelected(MenuItem item) {
-//        // Handle action bar item clicks here. The action bar will
-//        // automatically handle clicks on the Home/Up button, so long
-//        // as you specify a parent activity in AndroidManifest.xml.
-//        int id = item.getItemId();
-//
-//        //noinspection SimplifiableIfStatement
-//        if (id == R.id.action_settings) {
-//            return true;
-//        }
-//
-//        return super.onOptionsItemSelected(item);
-//    }
+    public boolean onOptionsItemSelected(MenuItem menuButton){
 
-//    @Override
-//    public boolean onSupportNavigateUp() {
-////        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
-////        return NavigationUI.navigateUp(navController, appBarConfiguration)
-////                || super.onSupportNavigateUp();
-//    }
+        boolean result = true;
+        //選択されたメニューボタンのIDを取得
+        int buttonId = menuButton.getItemId();
+
+        switch(buttonId){
+            //戻るボタンが押されたとき
+            case android.R.id.home:
+                finish();
+                break;
+
+            default:
+                result = super.onOptionsItemSelected(menuButton);
+                break;
+        }
+        return result;
+    }
 }

@@ -16,21 +16,24 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class ColorPickerActivity extends AppCompatActivity
         implements TextView.OnEditorActionListener,
         View.OnFocusChangeListener,
         SeekBar.OnSeekBarChangeListener {
 
-    TextView txtColor; // 色見本を表示するためのテキストビュー
-    EditText edtRed, edtGreen, edtBlue; // カラーコードを入力するためのエディットテキスト
-    SeekBar sbrRed, sbrGreen, sbrBlue;  // シークバー
+    TextView txtColor;
+    EditText edtRed, edtGreen, edtBlue;
+    SeekBar sbrRed, sbrGreen, sbrBlue;
     public static int r, g, b;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_color_picker);
-        // リソースからビューを取得する
+        // ビューを取得する
         txtColor = (TextView) this.findViewById(R.id.txtColor);
         edtRed = (EditText) this.findViewById(R.id.edtRed);
         edtGreen = (EditText) this.findViewById(R.id.edtGreen);
@@ -48,22 +51,25 @@ public class ColorPickerActivity extends AppCompatActivity
         sbrGreen.setOnSeekBarChangeListener(this);
         sbrBlue.setOnSeekBarChangeListener(this);
 
+        sbrRed.setProgress(r);
+        sbrGreen.setProgress(g);
+        sbrBlue.setProgress(b);
+
         Button ok = (Button)findViewById(R.id.OK);
         ok.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // 値保存処理
-//                Intent intent = new Intent(getApplication(), PixelArtMakeActivity.class);
-//                intent.putExtra("color",
-//                        new String[] {String.valueOf(r), String.valueOf(g), String.valueOf(b)});
-//                activityResultLauncher.launch(intent);
-//                finish();
-                Intent resIntent = new Intent();
-                resIntent.putExtra("colorR",String.valueOf(r));
-                resIntent.putExtra("colorG",String.valueOf(g));
-                resIntent.putExtra("colorB",String.valueOf(b));
+                List<Integer> colorRGB = new ArrayList<Integer>();
 
+                // 値保存処理
+                colorRGB.add(r);
+                colorRGB.add(g);
+                colorRGB.add(b);
+
+                Intent resIntent = new Intent(getApplication(), PixelArtMakeActivity.class);
+                resIntent.putIntegerArrayListExtra("colorRGB", (ArrayList<Integer>) colorRGB);
                 setResult(Activity.RESULT_OK, resIntent);
+
                 //　PixelArtMakeActivityに戻る
                 finish();
             }
