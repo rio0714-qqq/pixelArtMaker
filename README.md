@@ -1,6 +1,6 @@
 # PixelArtMaker
 
-<video width="240" src="pixelArtMakerImage.mp4" controls></video>
+<img src="pixelArtMakerImage.gif" alt="PixelArtMaker" width="240">
 
 ## 概要
 ### *ドット絵作成アプリ(Android)*
